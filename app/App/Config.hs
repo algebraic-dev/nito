@@ -1,4 +1,4 @@
-module App.Config (loadDotEnv, readDbConfig, readConfig, AppConfig (..)) where
+module App.Config (loadDotEnv, Env(..), readDbConfig, readConfig, AppConfig (..)) where
 
 import Configuration.Dotenv (Config (configPath), defaultConfig, loadFile)
 import Configuration.Dotenv.Environment (lookupEnv)
@@ -17,8 +17,14 @@ import Polysemy (Embed, Members, Sem, embed)
 import Polysemy.Fail (Fail)
 import Polysemy.Reader (Reader, asks)
 import System.Environment (getEnv)
+import Data.Text (Text, pack)
+import Web.JWT (hmacSecret, Signer)
 
-newtype AppConfig = AppConfig {dbInfo :: ConnectInfo}
+data AppConfig = AppConfig { appDbInfo :: ConnectInfo
+                           , appSigner :: Signer }
+
+data Env = Env { envConn :: Connection
+               , envInfo :: AppConfig}
 
 readDbConfig :: IO ConnectInfo
 readDbConfig =
@@ -30,7 +36,9 @@ readDbConfig =
     <*> getEnv "DB_NAME"
 
 readConfig :: IO AppConfig
-readConfig = AppConfig <$> readDbConfig
+readConfig = AppConfig
+                <$> readDbConfig
+                <*> (hmacSecret . pack <$> getEnv "SECRET")
 
 loadDotEnv :: IO ()
 loadDotEnv = do

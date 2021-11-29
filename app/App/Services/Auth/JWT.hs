@@ -1,4 +1,4 @@
-module App.Auth.JWT where
+module App.Services.Auth.JWT where
 
 import Polysemy ( interpret, Sem, makeSem, Member, embed )
 import Data.Text (Text)
@@ -24,10 +24,10 @@ import Web.JWT
       JWTClaimsSet(exp, unregisteredClaims),
       Signer )
 
-newtype JWTData = JWTData { userID :: Text } deriving Show
+newtype JWTData = JWTData { jwtUserID :: Text } deriving Show
 
 data Sign m a where
-  EncodeJWT :: JWTData -> Sign m Text
+  EncodeJWT :: Text -> Sign m Text
   DecodeJWT :: Text -> Sign m (Maybe JWTData)
 
 makeSem ''Sign
@@ -37,11 +37,12 @@ runJWTSigner signer = interpret \case
   (EncodeJWT info) -> do
       time        <- embed getCurrentTime
       let expTime  = posixDayLength * 30
-      let map      = Map.fromList [("id", String (userID info))]
+      let map      = Map.fromList [("id", String info)]
       pure $ encodeSigned signer mempty
-           $ mempty { unregisteredClaims = ClaimsMap map
-                    , Web.JWT.exp = numericDate $ utcTimeToPOSIXSeconds (addUTCTime expTime time)}
-
+           $ mempty 
+              { unregisteredClaims = ClaimsMap map
+              , Web.JWT.exp = numericDate $ utcTimeToPOSIXSeconds (addUTCTime expTime time)
+              }
   (DecodeJWT text) -> do
       time <- embed getCurrentTime
       pure $ decode text

@@ -17,7 +17,12 @@
               src = ./.;
               compiler-nix-name = "ghc8107";
               shell = { 
-                tools = { cabal = { }; ghcide = {}; };
+                tools = { 
+                    cabal = { };
+                    ghcid = { };
+                    haskell-language-server = { };
+                    hlint = { };
+                 };
                 buildInputs = with pkgs; [ nixpkgs-fmt postgresql zlib dbmate glibc ];
               };
             };
